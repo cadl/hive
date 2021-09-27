@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
@@ -447,13 +448,20 @@ public class HiveHBaseTableInputFormat extends TableInputFormatBase
   }
 
   @Override
-  public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+  public List<org.apache.hadoop.mapreduce.InputSplit> getSplits(JobContext context) throws IOException {
     synchronized (hbaseTableMonitor) {
-      return getSplitsInternal(jobConf, numSplits);
+      return getSplitsInternal(new JobConf(context.getConfiguration()));
     }
   }
 
-  private InputSplit[] getSplitsInternal(JobConf jobConf, int numSplits) throws IOException {
+  @Override
+  public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+    synchronized (hbaseTableMonitor) {
+      return getSplitsInternal(jobConf).toArray(new InputSplit[0]);
+    }
+  }
+
+  private List<org.apache.hadoop.mapreduce.InputSplit> getSplitsInternal(JobConf jobConf) throws IOException {
 
     //obtain delegation tokens for the job
     if (UserGroupInformation.getCurrentUser().hasKerberosCredentials()) {
@@ -524,13 +532,11 @@ public class HiveHBaseTableInputFormat extends TableInputFormatBase
 
       List<org.apache.hadoop.mapreduce.InputSplit> splits =
         super.getSplits(jobContext);
-      InputSplit [] results = new InputSplit[splits.size()];
-
+      List<org.apache.hadoop.mapreduce.InputSplit> hbaseSplits = new ArrayList<>();
       for (int i = 0; i < splits.size(); i++) {
-        results[i] = new HBaseSplit((TableSplit) splits.get(i), tablePaths[0]);
+        hbaseSplits.add(new HBaseSplit((TableSplit) splits.get(i), tablePaths[0]));
       }
-
-      return results;
+      return hbaseSplits;
     } finally {
       closeTable();
       if (conn != null) {
