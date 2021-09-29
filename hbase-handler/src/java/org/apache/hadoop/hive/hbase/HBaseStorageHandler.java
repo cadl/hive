@@ -557,7 +557,7 @@ public class HBaseStorageHandler extends DefaultStorageHandler
       ExprNodeDesc predicate) {
     ColumnMapping keyMapping = hBaseSerDe.getHBaseSerdeParam().getKeyColumnMapping();
     ColumnMapping tsMapping = hBaseSerDe.getHBaseSerdeParam().getTimestampColumnMapping();
-    IndexPredicateAnalyzer analyzer = HiveHBaseTableInputFormat.newIndexPredicateAnalyzer(
+    IndexPredicateAnalyzer analyzer = HiveHBaseTableMapredInputFormat.newIndexPredicateAnalyzer(
         keyMapping.columnName, keyMapping.isComparable(),
         tsMapping == null ? null : tsMapping.columnName);
     List<IndexSearchCondition> conditions = new ArrayList<IndexSearchCondition>();
